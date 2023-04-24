@@ -1,0 +1,61 @@
+﻿@page "/vehicles"
+@inject IVehicleRepository vehicleRepository;
+@inject Sotsera.Blazor.Toaster.IToaster Toaster;
+
+<div class="container">
+    <h3>Vehicles</h3>
+
+    <EditForm Model="@pesel" OnValidSubmit="@RemoveRegistrationNumber">
+        <label>Pesel</label>
+        <InputText class="form-control" id="pesel" @bind-Value="pesel" />
+        <div class="text-center mb-5">
+            <button class="btn btn-info mt-2" type="submit">Search</button>
+        </div>
+    </EditForm>
+
+    @if (vehicles.Count > 0)
+    {
+        <table class="table">
+            <thead>
+                <tr>
+                    <th scope="col">Model</th>
+                    <th scope="col">Brand</th>
+                    <th scope="col">ProductionYear</th>
+                    <th scope="col">PurchaseDate</th>
+                    <th scope="col">VinNumber</th>
+                    <th scope="col">RegistrationNumber</th>
+                </tr>
+            </thead>
+            @foreach (var vehicle in vehicles)
+            {
+                <tbody>
+                    <tr>
+                        <td>@vehicle.Model</td>
+                        <td>@vehicle.Brand</td>
+                        <td>@vehicle.ProductionYear.ToString()</td>
+                        <td>@vehicle.PurchaseDate</td>
+                        <td>@vehicle.VinNumber</td>
+                        @if (vehicle.RegistrationNumber != null)
+                        {
+                            <td>@vehicle?.RegistrationNumber.Number</td>
+                        }
+                    </tr>
+                </tbody>
+            }
+        </table>
+    }
+</div>
+
+@code {
+    private string pesel = string.Empty;
+    IList<Vehicle> vehicles = new List<Vehicle>();
+
+    private async Task RemoveRegistrationNumber()
+    {
+        if (!string.IsNullOrEmpty(pesel))
+        {
+            vehicles = await vehicleRepository.GetVehiclesForPerson(pesel);
+        }
+        else Toaster.Error("Value cannot be empty.");
+    }
+}

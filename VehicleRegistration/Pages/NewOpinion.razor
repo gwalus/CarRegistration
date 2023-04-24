@@ -1,0 +1,46 @@
+﻿@page "/new-opinion"
+@inject IPersonRepository personRepository;
+@inject Sotsera.Blazor.Toaster.IToaster Toaster;
+
+
+<div class="container">
+    <h3>New Opinion</h3>
+    <EditForm Model="@registrationNumber" OnValidSubmit="@AddOpinion">
+        <DataAnnotationsValidator />
+        <ValidationSummary />
+
+        <div class="form-group">
+            <label>Registration Number</label>
+            <InputText class="form-control" id="registrationNumber" @bind-Value="registrationNumber" />
+        </div>
+
+        <div class="form-group">
+            <label>Opinion</label>
+            <InputTextArea class="form-control" id="opinion" @bind-Value="opinion" />
+        </div>
+
+        <div class="text-right">
+            <button class="btn btn-info" type="submit">Add</button>
+        </div>
+    </EditForm>
+</div>
+
+@code {
+    private string registrationNumber = string.Empty;
+    private string opinion = string.Empty;
+
+    private async Task AddOpinion()
+    {
+        if (!(string.IsNullOrEmpty(registrationNumber) || string.IsNullOrEmpty(opinion)))
+        {
+            if (await personRepository.AddOpinionToRegistrationNumber(registrationNumber, opinion))
+            {
+                Toaster.Success("New opinion has been added.");
+                registrationNumber = string.Empty;
+                opinion = string.Empty;
+            }
+            else Toaster.Error("Something went wrong...");
+        }
+        else Toaster.Error("Values cannot be empty.");
+    }
+}

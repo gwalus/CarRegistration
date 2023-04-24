@@ -1,0 +1,97 @@
+﻿@page "/"
+@inject IVehicleRepository vehicleRepository;
+@inject Sotsera.Blazor.Toaster.IToaster Toaster;
+
+<h1>Welcome!</h1>
+
+Welcome to your new app.
+
+<div class="alert alert-secondary mt-4" role="alert">
+    What would you like to do?
+</div>
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-6 col-md-4">
+            <div class="card text-center mb-2" style="height: 15rem;">
+                <div class="card-body">
+                    <h5 class="card-title">Register</h5>
+                    <p class="card-text">Register your vehicle.</p>
+                    <div class="text-center">
+                        <NavLink href="/registration">
+                            <button class="btn btn-info" type="button">Register</button>
+                        </NavLink><br />
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-md-4">
+            <div class="card text-center mb-2" style="height: 15rem;">
+                <div class="card-body">
+                    <h5 class="card-title">Check your vehicles</h5>
+                    <p class="card-text">Find registered cars.</p>
+                    <div class="text-center">
+                        <NavLink href="/vehicles">
+                            <button class="btn btn-info" type="button">Vehicles</button>
+                        </NavLink><br />
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-md-4">
+            <div class="card text-center mb-2" style="height: 15rem;">
+                <div class="card-body">
+                    <h5 class="card-title">New opinion</h5>
+                    <p class="card-text">Find the registered number and give feedback.</p>
+                    <div class="text-center">
+                        <NavLink href="/new-opinion">
+                            <button class="btn btn-info" type="button">Add opinion</button>
+                        </NavLink><br />
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-md-4">
+            <div class="card text-center mb-2" style="height: 15rem;">
+                <div class="card-body">
+                    <h5 class="card-title">Check</h5>
+                    <p class="card-text">Check opinions</p>
+                    <NavLink href="/check-opinions">
+                        <button class="btn btn-info" type="button">Check</button>
+                    </NavLink><br />
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-md-4">
+            <div class="card text-center mb-2" style="height: 15rem;">
+                <div class="card-body">
+                    <h5 class="card-title">Unregister</h5>
+                    <p class="card-text">Remove your registration number from database.</p>
+                    <div class="form-group">
+                        <EditForm Model="@numberToRemove" OnValidSubmit="@RemoveRegistrationNumber">
+                            <InputText class="form-control" id="model" @bind-Value="numberToRemove" />
+                            <div class="text-center">
+                                <button class="btn btn-info mt-2" type="submit">Remove</button>
+                            </div>
+                        </EditForm>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code{
+    private string numberToRemove = string.Empty;
+
+    private async Task RemoveRegistrationNumber()
+    {
+        if (await vehicleRepository.RemoveRegistrationNumber(numberToRemove))
+        {
+            Toaster.Success("Removed");
+            numberToRemove = string.Empty;
+        }
+
+        else Toaster.Error("Something went wrong...");
+    }
+}

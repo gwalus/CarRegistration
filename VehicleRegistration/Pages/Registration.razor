@@ -1,0 +1,219 @@
+﻿@page "/registration"
+@inject IVehicleRepository vehicleRepository;
+@inject IPersonRepository personRepository;
+@inject Sotsera.Blazor.Toaster.IToaster Toaster;
+
+<div class="container" style="padding: 1rem">
+    <h3>Registration</h3>
+
+    <div class="text-center">
+        <h2>Are you new?</h2>
+        <button class="btn btn-info" type="button" @onclick="SetNewUser">Yes</button>
+        <button class="btn btn-info" type="button" @onclick="ForExistsUser">No</button>
+    </div>
+
+    @if (isNewPerson)
+    {
+        <EditForm Model="@vehicleModel" OnValidSubmit="@HandleValidSubmit">
+            <DataAnnotationsValidator />
+            <ValidationSummary />
+
+            <div class="form-group">
+                <label>FirstName</label>
+                <InputText class="form-control" id="firstName" @bind-Value="personModel.FirstName" />
+            </div>
+
+            <div class="form-group">
+                <label>LastName</label>
+                <InputText class="form-control" id="lastName" @bind-Value="personModel.LastName" />
+            </div>
+
+            <div class="form-group">
+                <label>Age</label>
+                <InputNumber class="form-control" id="age" @bind-Value="personModel.Age" />
+            </div>
+
+            <div class="form-group">
+                <label>Pesel</label>
+                <InputText class="form-control" id="pesel" @bind-Value="personModel.Pesel" />
+            </div>
+
+            <div class="form-group">
+                <label>Prefix</label>
+                <InputSelect class="form-control" id="registrationNumber" @bind-Value="choosedPrefix">
+                    @foreach (var prefix in prefixes)
+                        {
+                        <option value="@prefix">@prefix</option>
+                        }
+                </InputSelect>
+            </div>
+
+            <div class="form-group">
+                <label>Brand</label>
+                <InputText class="form-control" id="brand" @bind-Value="vehicleModel.Brand" />
+            </div>
+
+            <div class="form-group">
+                <label>Model</label>
+                <InputText class="form-control" id="model" @bind-Value="vehicleModel.Model" />
+            </div>
+
+            <div class="form-group">
+                <label>Production year</label>
+                <InputNumber class="form-control" id="productionYear" @bind-Value="vehicleModel.ProductionYear" />
+            </div>
+
+            <div class="form-group">
+                <label>Purchase date</label>
+                <InputDate class="form-control" id="purchaseDate" @bind-Value="purchaseDate" />
+            </div>
+
+            <div class="form-group">
+                <label>VIN number</label>
+                <InputText class="form-control" id="vinNumber" @bind-Value="vehicleModel.VinNumber" />
+            </div>
+
+            <div class="text-right">
+                <button class="btn btn-info" type="submit">Submit</button>
+            </div>
+        </EditForm>
+    }
+    @if (isNewPerson == false)
+    {
+<EditForm Model="@vehicleModel" OnValidSubmit="@HandleValidSubmit">
+    <DataAnnotationsValidator />
+    <ValidationSummary />
+
+    <div class="form-group">
+        <label>Pesel</label>
+        <InputText class="form-control" id="pesel" @bind-Value="personModel.Pesel" />
+    </div>
+
+    <div class="form-group">
+        <label>Prefix</label>
+        <InputSelect class="form-control" id="registrationNumber" @bind-Value="choosedPrefix">
+            @foreach (var prefix in prefixes)
+                {
+                <option value="@prefix">@prefix</option>
+                }
+        </InputSelect>
+    </div>
+
+    <div class="form-group">
+        <label>Brand</label>
+        <InputText class="form-control" id="brand" @bind-Value="vehicleModel.Brand" />
+    </div>
+
+    <div class="form-group">
+        <label>Model</label>
+        <InputText class="form-control" id="model" @bind-Value="vehicleModel.Model" />
+    </div>
+
+    <div class="form-group">
+        <label>Production year</label>
+        <InputNumber class="form-control" id="productionYear" @bind-Value="vehicleModel.ProductionYear" />
+    </div>
+
+    <div class="form-group">
+        <label>Purchase date</label>
+        <InputDate class="form-control" id="purchaseDate" @bind-Value="purchaseDate" />
+    </div>
+
+    <div class="form-group">
+        <label>VIN number</label>
+        <InputText class="form-control" id="vinNumber" @bind-Value="vehicleModel.VinNumber" />
+    </div>
+
+    <div class="text-right">
+        <button class="btn btn-info" type="submit">Submit</button>
+    </div>
+</EditForm>
+    }
+
+</div>
+
+@code {
+    private DateTime purchaseDate = DateTime.Now;
+    private Vehicle vehicleModel = new();
+    private Person personModel = new();
+    private bool isNewPerson = true;
+    private string choosedPrefix = "";
+    private IList<string> prefixes = new List<string>();
+    Random random = new Random();
+
+    protected override async Task OnInitializedAsync()
+    {
+        prefixes = await vehicleRepository.GetPrefixes();
+    }
+
+    private async Task HandleValidSubmit()
+    {
+        vehicleModel.PurchaseDate = purchaseDate.ToShortDateString();
+
+        if (isNewPerson)
+        {
+            vehicleModel.Person = personModel;
+
+            string randomNumber = random.Next(10000, 100000).ToString();
+
+            while(await vehicleRepository.CheckRegistrationNumber(randomNumber))
+            {
+                randomNumber = random.Next(10000, 100000).ToString();
+            }
+
+            vehicleModel.RegistrationNumber = new RegistrationNumber { Number = choosedPrefix + randomNumber };
+
+
+            if (await vehicleRepository.AddVehicle(vehicleModel))
+            {
+                Toaster.Success("Vehicle has been registred!", "Successfully");
+                ResetForm();
+            }
+            else Toaster.Success("Something went wrong...", "Unexpected error :(");
+        }
+        else
+        {
+            var person = await personRepository.GetPersonByPesel(personModel.Pesel);
+
+            if (person == null)
+            {
+                Toaster.Warning("Person doesn't exists");
+                return;
+            }
+
+            vehicleModel.Person = person;
+
+            string randomNumber = random.Next(10000, 100000).ToString();
+
+            while (await vehicleRepository.CheckRegistrationNumber(randomNumber))
+            {
+                randomNumber = random.Next(10000, 100000).ToString();
+            }
+
+            vehicleModel.RegistrationNumber = new RegistrationNumber { Number = choosedPrefix + randomNumber };
+
+            if (await vehicleRepository.AddVehicle(vehicleModel))
+            {
+                Toaster.Success("Vehicle has been registred!", "Successfully");
+                ResetForm();
+            }
+            else Toaster.Success("Something went wrong...", "Unexpected error :(");
+        }
+    }
+
+    private void ResetForm()
+    {
+        vehicleModel = new();
+        personModel = new();
+    }
+
+    private void SetNewUser()
+    {
+        isNewPerson = true;
+    }
+
+    private void ForExistsUser()
+    {
+        isNewPerson = false;
+    }
+}
